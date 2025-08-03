@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano de Estudos Interativo</title>
+    <!-- Favicon -->
+    <link rel="icon" href="https://i.ibb.co/HLmTyPQb/emblema-curso.png" type="image/png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+        }
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .custom-checkbox:checked {
+            background-color: #34D399;
+            border-color: #34D399;
+        }
+        .custom-checkbox:checked::after {
+            content: '✔';
+            color: white;
+            display: block;
+            text-align: center;
+            line-height: 1.25rem;
+            font-size: 0.8rem;
+        }
+        .calendar-day.has-event {
+            background-color: #fef9c3;
+            border-radius: 50%;
+            position: relative;
+        }
+        .calendar-day.is-today {
+            background-color: #bfdbfe;
+            border-radius: 50%;
+        }
+        #calendar-tooltip ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #calendar-tooltip li {
+            padding: 2px 0;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl relative">
+        <header class="bg-blue-900 text-white p-6 md:p-8 rounded-b-xl flex flex-col items-center text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-2 flex items-center justify-center">
+                <img src="https://i.ibb.co/HLmTyPQb/emblema-curso.png" alt="Emblema do curso" class="w-16 h-16 mr-4 rounded-full shadow-lg">
+                Apostila Preparatória para Concursos Públicos
+            </h1>
+            <h2 class="text-xl md:text-2xl font-bold mb-1">Meu Plano de Estudos</h2>
+            <h3 class="text-lg md:text-xl font-semibold">Organize sua jornada até a aprovação!</h3>
+        </header>
+
+        <main>
+            <section id="dashboard" class="mb-8 p-6 bg-white rounded-2xl shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Seu Progresso Geral</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <div class="md:col-span-1 flex justify-center items-center">
+                        <div class="chart-container">
+                            <canvas id="progressChart"></canvas>
+                            <div id="progressText" class="progress-text">
+                                <span class="text-4xl font-bold text-gray-800">0%</span>
+                                <span class="block text-sm text-gray-500">Concluído</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2 grid grid-cols-2 gap-4 content-center">
+                        <div class="bg-amber-50 p-4 rounded-xl text-center">
+                            <p class="text-sm text-amber-700 font-medium">Dias Restantes</p>
+                            <p id="daysLeft" class="text-3xl font-bold text-amber-900">0</p>
+                        </div>
+                        <div class="bg-sky-50 p-4 rounded-xl text-center">
+                            <p class="text-sm text-sky-700 font-medium">Tópicos Totais</p>
+                            <p id="totalTopics" class="text-3xl font-bold text-sky-900">43</p>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl text-center">
+                            <p class="text-sm text-emerald-700 font-medium">Concluídos</p>
+                            <p id="completedTopics" class="text-3xl font-bold text-emerald-900">0</p>
+                        </div>
+                        <div class="bg-rose-50 p-4 rounded-xl text-center">
+                            <p class="text-sm text-rose-700 font-medium">Pendentes</p>
+                            <p id="pendingTopics" class="text-3xl font-bold text-rose-900">43</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="mt-6 text-center bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-700">Ritmo de Estudo Sugerido</h3>
+                    <p class="text-gray-600">Com base no seu prazo, o ideal é estudar aproximadamente <strong class="font-bold text-gray-800">1 tópico a cada 1 ou 2 dias</strong> para cobrir todo o conteúdo com tempo para revisões.</p>
+                </div>
+                <div class="mt-6 text-center bg-blue-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-blue-700">Dias de Aula do Professor</h3>
+                    <p class="text-blue-600">Lembre-se: o professor dará aulas apenas nas <strong class="font-bold text-blue-800">Segundas e Quartas-feiras</strong>.</p>
+                </div>
+            </section>
+
+            <section id="calendar-section" class="mb-8 p-6 bg-white rounded-2xl shadow-sm relative">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Calendário de Tarefas e Provas</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <button id="prev-month" class="px-4 py-2 bg-gray-200 rounded-lg">&lt;</button>
+                    <h3 id="month-year" class="text-xl font-bold"></h3>
+                    <button id="next-month" class="px-4 py-2 bg-gray-200 rounded-lg">&gt;</button>
+                </div>
+                <div id="calendar" class="grid grid-cols-7 gap-2"></div>
+                <div id="calendar-tooltip" class="hidden absolute bg-white p-2 border rounded-lg shadow-lg z-10 text-sm"></div>
+                <div id="task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
+                    <div class="bg-white p-6 rounded-lg">
+                        <h3 class="text-lg font-bold mb-4">Adicionar Tarefa para <span id="modal-date"></span></h3>
+                        <input id="task-input" type="text" class="w-full p-2 border rounded-md mb-4" placeholder="Digite sua tarefa">
+                        <div class="flex justify-end">
+                            <button id="cancel-task" class="px-4 py-2 bg-gray-200 rounded-lg mr-2">Cancelar</button>
+                            <button id="save-task" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Salvar</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="topics-section" class="p-6 bg-white rounded-2xl shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 sm:mb-0">Conteúdo Verticalizado</h2>
+                    <div id="filter-buttons" class="flex flex-wrap gap-2 justify-center">
+                    </div>
+                </div>
+                 <p class="text-center text-gray-500 mb-6">Marque os tópicos que você já estudou para atualizar seu progresso e insira seu percentual de acertos.</p>
+                <div id="topics-list" class="space-y-3">
+                </div>
+            </section>
+        </main>
+
+        <footer class="bg-blue-900 text-white text-center p-6 mt-8 rounded-t-xl">
+            <p>© 2025 Cursinho Preparatório. Todos os direitos reservados.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const STORAGE_KEY = 'studyPlanData';
+            const CALENDAR_STORAGE_KEY = 'calendarTasks';
+            
+            const fileLinks = {
+                'Constituição Federal (CF/88)': 'https://drive.google.com/file/d/1mUlSOAB5F8BPtkzVlndu8nYJRm4u7z4V/view?usp=drive_link',
+                'Constituição Estadual (MG)': 'https://drive.google.com/file/d/1CccytIjwtQjtZCjc4ZFFpO5dhBUNciGn/view?usp=drive_link',
+                'Lei de Diretrizes e Bases (LDB)': 'https://drive.google.com/file/d/1UdU_7XbF_qH3WvPpWrqUDFk7SdGGC4E-/view?usp=drive_link',
+                'Plano Nacional de Educação (PNE)': 'https://drive.google.com/file/d/1kgt8yVZpvLwAnJxrbiha4FzkTMM_pt__/view?usp=drive_link',
+                'Legislação Estadual - MG': 'https://drive.google.com/file/d/1rYdWiK7lbFgI_jQaq87lTN6qPKmL-z8S/view?usp=drive_link',
+                'Código de Ética e Conduta Pública': 'https://drive.google.com/file/d/1psblPAnfd-Wp2G3bkhiKAkfEDlatzfwA/view?usp=drive_link',
+                'Organização do Ensino Estadual': 'https://drive.google.com/file/d/171HiXZMxkZTfrgzzGXXoj-NRc7NryEh1/view?usp=drive_link',
+                'Base Nacional Comum Curricular (BNCC)': 'https://drive.google.com/file/d/12OlSCw9MlmPztfA3zzNfO9wthXxLnBY_/view?usp=drive_link',
+                'Princípios e Fins da Educação': 'https://drive.google.com/file/d/1vYnGsTAnbvKjfmV_iUUCDv-NUOFZ8bzG/view?usp=drive_link',
+                'Filosofia da Educação': 'https://drive.google.com/file/d/15X-0blHbtH4QynGlvV36oxG7nxhzHtmk/view?usp=drive_link',
+                'Psicologia da Educação': 'https://drive.google.com/open?id=1wrQioDcTrAxjOK2E24PzeDUBx7cNgSEv',
+                'Sociologia da Educação': 'https://drive.google.com/file/d/1ZV6cSVmx_1Bx3-KdtcdI0Xkb_Z45CnNs/view?usp=drive_link',
+                'Currículo': 'https://drive.google.com/file/d/1MlqIOiiUFjq_gCCLgwDBkbKC-l5cv5pS/view?usp=drive_link',
+                'Fundamentos da Educação': 'https://drive.google.com/file/d/1kqF5N5_Az72YqHV8qwELWG3Qd23x-UrW/view?usp=drive_link',
+                'Didática': 'https://drive.google.com/file/d/1Ofps-U4q9qx-8tJ2Ra6XqXiYsDG7LPZW/view?usp=drive_link',
+                'História da Educação': 'https://drive.google.com/file/d/1E6ZFquTRP58mPkjuo3zJzqhtrYUB9nCJ/view?usp=drive_link',
+                'Desenvolvimento e Piaget': 'https://drive.google.com/file/d/1Fi8qHoqk2bnDWna2FJeAZ2kNB6YmyAKg/view?usp=drive_link',
+                'Educação como Prática da Liberdade': 'https://drive.google.com/open?id=1QMSrdM6V_sz7SN5ELvkMmhtv-vkDYpMI',
+                'Tendências Pedagógicas': 'https://drive.google.com/file/d/1zy21fqEBQ-CzRu0oot-WfFlWRlf3YLMf/view?usp=drive_link',
+                'Inclusão e Diversidade': 'https://drive.google.com/file/d/1wln0XZEg8gD1RbGMKJy_sUiFncwGBa3H/view?usp=drive_link',
+                'Transtornos e NEE': 'https://drive.google.com/file/d/1ACvKwGAe9KQ4vOhQAje2yKYQztHD5eJp/view?usp=drive_link',
+                'Práticas Inclusivas': 'https://drive.google.com/file/d/1wln0XZEg8gD1RbGMKJy_sUiFncwGBa3H/view?usp=drive_link',
+                'Terapia Ocupacional': 'https://drive.google.com/file/d/119dksXrs40zj4t6-RhZxB5Bmfl18ZRlq/view?usp=drive_link',
+                'Desafios da Educação Especial': 'https://drive.google.com/file/d/1znHaVyjjWO5zKUmv_sHQOXpSoNBdZdgl/view?usp=drive_link',
+                'Psicologia e Educação Especial': 'https://drive.google.com/open?id=17aVPwJZpq_-EdRgI9ZiSboQ3z9Fo6CXm',
+                'Educação Inclusiva': 'https://drive.google.com/file/d/1wln0XZEg8gD1RbGMKJy_sUiFncwGBa3H/view?usp=drive_link',
+                'Avaliação': 'https://drive.google.com/file/d/1E-6M2_h7_e0GLq27cfbfeoCoQVrjdIpA/view?usp=drive_link',
+                'Gestão Democrática': 'https://drive.google.com/open?id=1mUWK69Zp9ZzxpYHNshcuFA0n97YWpDFy',
+                'Gestão Escolar': 'https://drive.google.com/file/d/1iUF_yonHshu06nkmLMJhYd-D_7Yk6V7D/view?usp=drive_link',
+                'Tecnologias Educacionais': 'https://drive.google.com/file/d/1sdEiSaVKPfPRXbBCzLdzirqAU6U8O98A/view?usp=drive_link',
+                'Letramento': 'https://drive.google.com/file/d/1-gCZvvlpNSBSOaDi31PKc-v7my1YCvOE/view?usp=drive_link',
+                'Políticas Públicas em Educação': 'https://drive.google.com/file/d/1MtdLdYYuTUPYkfPaLSGoIbRvnTnmrlXR/view?usp=drive_link',
+                'Educação Infantil': 'https://drive.google.com/file/d/1CeRXVO6MOyCjobhUpVCBZJ5nC7CLbBey/view?usp=drive_link',
+                'Alfabetização': 'https://drive.google.com/file/d/1E0r6GrudLgubW6GTNkPn0-C0L36vgoEf/view?usp=drive_link',
+                'Estágio e Práticas Curriculares': 'https://drive.google.com/open?id=14iD73my05Kz028uIH5HMTO48S2rcVxQC',
+                'Organização do Sistema Estadual': 'https://drive.google.com/file/d/171HiXZMxkZTfrgzzGXXoj-NRc7NryEh1/view?usp=drive_link',
+                'Atribuições do Especialista': 'https://drive.google.com/file/d/1H0U7wMy9glbJelnP1PgGyNW1T1uhdjky/view?usp=drive_link',
+            };
+
+            let studyData = {
+                topics: [
+                    { id: 1, title: 'Constituição Federal (CF/88)', category: 'Legislação', completed: false, driveLink: '', score: null },
+                    { id: 2, title: 'Constituição Estadual (MG)', category: 'Legislação', completed: false, driveLink: '', score: null },
+                    { id: 3, title: 'Lei de Diretrizes e Bases (LDB)', category: 'Legislação', completed: false, driveLink: '', score: null },
+                    { id: 4, title: 'Plano Nacional de Educação (PNE)', category: 'Legislação', completed: false, driveLink: '', score: null },
+                    { id: 5, title: 'Legislação Estadual - MG', category: 'Legislação', completed: false, driveLink: '', score: null },
+                    { id: 6, title: 'Código de Ética e Conduta Pública', category: 'Legislação', completed: false, driveLink: '', score: null },
+                    { id: 7, title: 'Organização do Ensino Estadual', category: 'Legislação', completed: false, driveLink: '', score: null },
+                    { id: 8, title: 'Base Nacional Comum Curricular (BNCC)', category: 'Legislação', completed: false, driveLink: '', score: null },
+                    { id: 9, title: 'Princípios e Fins da Educação', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 10, title: 'Filosofia da Educação', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 11, title: 'Psicologia da Educação', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 12, title: 'Sociologia da Educação', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 13, title: 'Currículo', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 14, title: 'Fundamentos da Educação', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 15, title: 'Didática', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 16, title: 'História da Educação', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 17, title: 'Desenvolvimento e Piaget', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 18, title: 'Educação como Prática da Liberdade', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 19, title: 'Tendências Pedagógicas', category: 'Fundamentos', completed: false, driveLink: '', score: null },
+                    { id: 20, title: 'Inclusão e Diversidade', category: 'Inclusão', completed: false, driveLink: '', score: null },
+                    { id: 21, title: 'Transtornos e NEE', category: 'Inclusão', completed: false, driveLink: '', score: null },
+                    { id: 22, title: 'Práticas Inclusivas', category: 'Inclusão', completed: false, driveLink: '', score: null },
+                    { id: 23, title: 'Terapia Ocupacional', category: 'Inclusão', completed: false, driveLink: '', score: null },
+                    { id: 24, title: 'Desafios da Educação Especial', category: 'Inclusão', completed: false, driveLink: '', score: null },
+                    { id: 25, title: 'Psicologia e Educação Especial', category: 'Inclusão', completed: false, driveLink: '', score: null },
+                    { id: 26, title: 'Educação Inclusiva', category: 'Inclusão', completed: false, driveLink: '', score: null },
+                    { id: 27, title: 'Avaliação', category: 'Gestão', completed: false, driveLink: '', score: null },
+                    { id: 28, title: 'Gestão Democrática', category: 'Gestão', completed: false, driveLink: '', score: null },
+                    { id: 29, title: 'Gestão Escolar', category: 'Gestão', completed: false, driveLink: '', score: null },
+                    { id: 30, title: 'Tecnologias Educacionais', category: 'Metodologias', completed: false, driveLink: '', score: null },
+                    { id: 31, title: 'Letramento', category: 'Metodologias', completed: false, driveLink: '', score: null },
+                    { id: 32, title: 'Políticas Públicas em Educação', category: 'Metodologias', completed: false, driveLink: '', score: null },
+                    { id: 33, title: 'Educação Infantil', category: 'Metodologias', completed: false, driveLink: '', score: null },
+                    { id: 34, title: 'Alfabetização', category: 'Metodologias', completed: false, driveLink: '', score: null },
+                    { id: 35, title: 'Estágio e Práticas Curriculares', category: 'Metodologias', completed: false, driveLink: '', score: null },
+                    { id: 36, title: 'Organização do Sistema Estadual', category: 'Atribuições', completed: false, driveLink: '', score: null },
+                    { id: 37, title: 'Atribuições do Especialista', category: 'Atribuições', completed: false, driveLink: '', score: null },
+                    { id: 38, title: 'Português 1', category: 'Bônus', completed: false, driveLink: '', score: null },
+                    { id: 39, title: 'Português 2', category: 'Bônus', completed: false, driveLink: '', score: null },
+                    { id: 40, title: 'Português 3', category: 'Bônus', completed: false, driveLink: '', score: null },
+                    { id: 41, title: 'Redação 1', category: 'Bônus', completed: false, driveLink: '', score: null },
+                    { id: 42, title: 'Redação 2', category: 'Bônus', completed: false, driveLink: '', score: null },
+                    { id: 43, title: 'Redação 3', category: 'Bônus', completed: false, driveLink: '', score: null },
+                ],
+                endDate: new Date('2025-09-22T23:59:59').toISOString()
+            };
+            
+            // Popula os links dos tópicos a partir do objeto fileLinks
+            studyData.topics.forEach(topic => {
+                if (fileLinks[topic.title]) {
+                    topic.driveLink = fileLinks[topic.title];
+                }
+            });
+            
+            let calendarTasks = {
+                '2025-08-24': [{ text: 'Prova PBH' }],
+                '2025-09-28': [{ text: 'Prova Educação MG' }],
+                '2025-10-05': [{ text: 'Prova CNU (Objetiva)' }],
+                '2025-12-07': [{ text: 'Prova CNU (Discursiva)' }],
+                '2025-01-18': [{ text: 'Prova Santa Luzia' }],
+                '2025-01-19': [{ text: 'Prova Santa Luzia' }],
+                '2025-01-25': [{ text: 'Prova Santa Luzia' }],
+                '2025-01-26': [{ text: 'Prova Santa Luzia' }],
+            };
+
+            const topicsListContainer = document.getElementById('topics-list');
+            const filterButtonsContainer = document.getElementById('filter-buttons');
+            let progressChart;
+            let currentFilter = 'Todos';
+
+            // Calendar variables
+            const calendarContainer = document.getElementById('calendar');
+            const monthYearEl = document.getElementById('month-year');
+            const prevMonthBtn = document.getElementById('prev-month');
+            const nextMonthBtn = document.getElementById('next-month');
+            const taskModal = document.getElementById('task-modal');
+            const modalDateEl = document.getElementById('modal-date');
+            const taskInput = document.getElementById('task-input');
+            const cancelTaskBtn = document.getElementById('cancel-task');
+            const saveTaskBtn = document.getElementById('save-task');
+            let currentDate = new Date();
+            let selectedDate = null;
+
+            function saveData() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(studyData));
+            }
+
+            function loadData() {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    parsedData.endDate = new Date(parsedData.endDate);
+                    studyData = parsedData;
+                }
+            }
+            
+            function saveCalendarTasks() {
+                localStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(calendarTasks));
+            }
+
+            function loadCalendarTasks() {
+                const savedTasks = localStorage.getItem(CALENDAR_STORAGE_KEY);
+                if (savedTasks) {
+                    calendarTasks = JSON.parse(savedTasks);
+                }
+            }
+
+            function calculateDaysLeft() {
+                const today = new Date();
+                const endDate = studyData.endDate;
+                const diffTime = endDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                document.getElementById('daysLeft').textContent = diffDays > 0 ? diffDays : 0;
+            }
+
+            function renderTopics() {
+                topicsListContainer.innerHTML = '';
+                const filteredTopics = currentFilter === 'Todos' 
+                    ? studyData.topics 
+                    : studyData.topics.filter(t => t.category === currentFilter);
+
+                if (filteredTopics.length === 0) {
+                    topicsListContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum tópico encontrado para esta categoria.</p>`;
+                    return;
+                }
+                
+                filteredTopics.forEach(topic => {
+                    const item = document.createElement('div');
+                    item.className = 'flex flex-col sm:flex-row items-start sm:items-center p-4 bg-gray-50 rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-md hover:border-emerald-300';
+                    
+                    item.innerHTML = `
+                        <div class="flex items-center w-full sm:w-2/3 mb-2 sm:mb-0">
+                            <input type="checkbox" id="topic-${topic.id}" data-id="${topic.id}" class="custom-checkbox h-5 w-5 rounded border-gray-300 focus:ring-emerald-500 transition duration-150 ease-in-out appearance-none cursor-pointer">
+                            <label for="topic-${topic.id}" class="ml-4 flex-grow text-gray-700 cursor-pointer ${topic.completed ? 'line-through text-gray-400' : ''}">${topic.title}</label>
+                            <span class="text-xs font-medium px-2 py-1 rounded-full ${getCategoryClass(topic.category)} ml-auto sm:ml-4">${topic.category}</span>
+                        </div>
+                        <div class="flex items-center w-full sm:w-1/3 mt-2 sm:mt-0 sm:ml-auto justify-end">
+                            <input type="number" id="score-${topic.id}" data-id="${topic.id}" placeholder="% acerto" class="w-24 p-2 text-sm border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 mr-2" value="${topic.score || ''}" min="0" max="100">
+                            <button data-id="${topic.id}" class="download-file-btn p-2 rounded-md bg-green-500 text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-sm" title="Baixar arquivo">⬇️</button>
+                        </div>
+                    `;
+                    topicsListContainer.appendChild(item);
+
+                    const checkbox = item.querySelector(`#topic-${topic.id}`);
+                    checkbox.checked = topic.completed;
+                    checkbox.addEventListener('change', handleTopicToggle);
+                    
+                    const scoreInput = item.querySelector(`#score-${topic.id}`);
+                    scoreInput.addEventListener('input', handleScoreChange);
+
+                    const downloadButton = item.querySelector(`.download-file-btn`);
+                    downloadButton.addEventListener('click', handleDownloadFile);
+                });
+            }
+            
+            function getCategoryClass(category) {
+                const classes = {
+                    'Legislação': 'bg-blue-100 text-blue-800',
+                    'Fundamentos': 'bg-indigo-100 text-indigo-800',
+                    'Inclusão': 'bg-purple-100 text-purple-800',
+                    'Gestão': 'bg-pink-100 text-pink-800',
+                    'Metodologias': 'bg-teal-100 text-teal-800',
+                    'Atribuições': 'bg-orange-100 text-orange-800',
+                    'Bônus': 'bg-gray-200 text-gray-800',
+                };
+                return classes[category] || 'bg-gray-100 text-gray-800';
+            }
+
+            function handleTopicToggle(e) {
+                const topicId = parseInt(e.target.dataset.id);
+                const topic = studyData.topics.find(t => t.id === topicId);
+                if (topic) {
+                    topic.completed = e.target.checked;
+                    updateProgress();
+                    renderTopics();
+                    saveData();
+                }
+            }
+            
+            function handleScoreChange(e) {
+                const topicId = parseInt(e.target.dataset.id);
+                const topic = studyData.topics.find(t => t.id === topicId);
+                if (topic) {
+                    topic.score = e.target.value;
+                    saveData();
+                }
+            }
+
+            function handleDownloadFile(e) {
+                const topicId = parseInt(e.currentTarget.dataset.id);
+                const topic = studyData.topics.find(t => t.id === topicId);
+                if (topic && topic.driveLink) {
+                    try {
+                        const link = document.createElement('a');
+                        link.href = topic.driveLink;
+                        link.setAttribute('download', ''); 
+                        link.setAttribute('target', '_blank');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    } catch (error) {
+                        console.error('Download failed:', error);
+                        window.open(topic.driveLink, '_blank');
+                    }
+                } else {
+                    alert('Nenhum link associado a este tópico para download.');
+                }
+            }
+
+            function updateProgress() {
+                const total = studyData.topics.length;
+                const completed = studyData.topics.filter(t => t.completed).length;
+                const pending = total - completed;
+                const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                document.getElementById('totalTopics').textContent = total;
+                document.getElementById('completedTopics').textContent = completed;
+                document.getElementById('pendingTopics').textContent = pending;
+                document.getElementById('progressText').querySelector('span.text-4xl').textContent = `${percentage}%`;
+
+                updateChart(completed, pending);
+            }
+
+            function createChart() {
+                const ctx = document.getElementById('progressChart').getContext('2d');
+                progressChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Concluídos', 'Pendentes'],
+                        datasets: [{
+                            data: [0, studyData.topics.length],
+                            backgroundColor: ['#34D399', '#F0F0F0'],
+                            borderColor: ['#ffffff', '#ffffff'],
+                            borderWidth: 4,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '80%',
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            }
+                        },
+                        animation: {
+                            animateScale: true,
+                            animateRotate: true
+                        }
+                    }
+                });
+            }
+
+            function updateChart(completed, pending) {
+                if (progressChart) {
+                    progressChart.data.datasets[0].data[0] = completed;
+                    progressChart.data.datasets[0].data[1] = pending;
+                    progressChart.update();
+                }
+            }
+
+            function renderFilterButtons() {
+                const categories = ['Todos', ...new Set(studyData.topics.map(t => t.category))];
+                filterButtonsContainer.innerHTML = '';
+                categories.forEach(category => {
+                    const button = document.createElement('button');
+                    button.textContent = category;
+                    button.dataset.filter = category;
+                    button.className = `px-4 py-2 text-sm font-medium rounded-full transition-colors duration-200 ${currentFilter === category ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
+                    filterButtonsContainer.appendChild(button);
+                });
+
+                filterButtonsContainer.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON') {
+                        currentFilter = e.target.dataset.filter;
+                        renderFilterButtons();
+                        renderTopics();
+                    }
+                });
+            }
+
+            // Calendar functions
+            function renderCalendar() {
+                calendarContainer.innerHTML = '';
+                const month = currentDate.getMonth();
+                const year = currentDate.getFullYear();
+                monthYearEl.textContent = `${currentDate.toLocaleString('pt-BR', { month: 'long' })} ${year}`;
+
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                daysOfWeek.forEach(day => {
+                    const dayEl = document.createElement('div');
+                    dayEl.textContent = day;
+                    dayEl.className = 'text-center font-bold';
+                    calendarContainer.appendChild(dayEl);
+                });
+
+                for (let i = 0; i < firstDay; i++) {
+                    calendarContainer.appendChild(document.createElement('div'));
+                }
+
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dayEl = document.createElement('div');
+                    dayEl.textContent = i;
+                    dayEl.className = 'text-center py-2 cursor-pointer calendar-day';
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    
+                    if (calendarTasks[dateStr]) {
+                        dayEl.classList.add('has-event');
+                        const tasksText = calendarTasks[dateStr].map(task => task.text).join(', ');
+                        dayEl.title = tasksText; // Add browser tooltip
+
+                        // Add custom tooltip events
+                        dayEl.addEventListener('mouseenter', (event) => {
+                            const tooltip = document.getElementById('calendar-tooltip');
+                            const tasksHtml = calendarTasks[dateStr].map(task => `<li>${task.text}</li>`).join('');
+                            tooltip.innerHTML = `<ul>${tasksHtml}</ul>`;
+                            
+                            const rect = event.target.getBoundingClientRect();
+                            tooltip.style.left = `${rect.left + window.scrollX}px`;
+                            tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                            tooltip.classList.remove('hidden');
+                        });
+
+                        dayEl.addEventListener('mouseleave', () => {
+                            document.getElementById('calendar-tooltip').classList.add('hidden');
+                        });
+                    }
+                    
+                    const today = new Date();
+                    if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                        dayEl.classList.add('is-today');
+                    }
+
+                    dayEl.addEventListener('click', () => {
+                        selectedDate = dateStr;
+                        modalDateEl.textContent = `${i}/${month + 1}/${year}`;
+                        taskModal.classList.remove('hidden');
+                        taskInput.focus();
+                    });
+                    calendarContainer.appendChild(dayEl);
+                }
+            }
+
+            prevMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+
+            nextMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            cancelTaskBtn.addEventListener('click', () => {
+                taskModal.classList.add('hidden');
+            });
+
+            saveTaskBtn.addEventListener('click', () => {
+                const taskText = taskInput.value.trim();
+                if (taskText) {
+                    if (!calendarTasks[selectedDate]) {
+                        calendarTasks[selectedDate] = [];
+                    }
+                    calendarTasks[selectedDate].push({ text: taskText });
+                    taskInput.value = '';
+                    taskModal.classList.add('hidden');
+                    saveCalendarTasks();
+                    renderCalendar();
+                }
+            });
+            
+            function initialize() {
+                loadData();
+                loadCalendarTasks();
+                calculateDaysLeft();
+                createChart();
+                renderFilterButtons();
+                renderTopics();
+                updateProgress();
+                renderCalendar();
+            }
+
+            initialize();
+        });
+    </script>
+</body>
+</html>
