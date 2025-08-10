@@ -163,7 +163,6 @@
             const STORAGE_KEY = 'studyPlanData';
             const CALENDAR_STORAGE_KEY = 'calendarTasks';
             
-            // Popula os links dos tópicos a partir do objeto fileLinks
             const fileLinks = {
                 'Constituição Federal (CF/88)': 'https://drive.google.com/file/d/1mUlSOAB5F8BPtkzVlndu8nYJRm4u7z4V/view?usp=drive_link',
                 'Constituição Estadual (MG)': 'https://drive.google.com/file/d/1CccytIjwtQjtZCjc4ZFFpO5dhBUNciGn/view?usp=drive_link',
@@ -202,8 +201,6 @@
                 'Estágio e Práticas Curriculares': 'https://drive.google.com/open?id=14iD73my05Kz028uIH5HMTO48S2rcVxQC',
                 'Organização do Sistema Estadual': 'https://drive.google.com/file/d/171HiXZMxkZTfrgzzGXXoj-NRc7NryEh1/view?usp=drive_link',
                 'Atribuições do Especialista': 'https://drive.google.com/file/d/1H0U7wMy9glbJelnP1PgGyNW1T1uhdjky/view?usp=drive_link',
-                // Link para Redação 1 adicionado aqui para garantir que não seja sobrescrito.
-                'Redação 1': 'https://jpdev91.github.io/redacao1-/'
             };
 
             let studyData = {
@@ -248,13 +245,14 @@
                     { id: 38, title: 'Português 1', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 39, title: 'Português 2', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 40, title: 'Português 3', category: 'Bônus', completed: false, driveLink: '', score: null },
-                    { id: 41, title: 'Redação 1', category: 'Bônus', completed: false, driveLink: '', score: null },
+                    { id: 41, title: 'Redação 1', category: 'Bônus', completed: false, driveLink: 'https://docs.google.com/document/d/1572PasqQzUXygLMtzI6KHa5mGxZPid7l/edit?usp=drive_link&ouid=113520162287415830159&rtpof=true&sd=true', score: null },
                     { id: 42, title: 'Redação 2', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 43, title: 'Redação 3', category: 'Bônus', completed: false, driveLink: '', score: null },
                 ],
                 endDate: new Date('2025-09-22T23:59:59').toISOString()
             };
             
+            // Popula os links dos tópicos a partir do objeto fileLinks
             studyData.topics.forEach(topic => {
                 if (fileLinks[topic.title]) {
                     topic.driveLink = fileLinks[topic.title];
@@ -316,7 +314,7 @@
 
             function calculateDaysLeft() {
                 const today = new Date();
-                const endDate = studyData.endDate;
+                const endDate = new Date(studyData.endDate);
                 const diffTime = endDate - today;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 document.getElementById('daysLeft').textContent = diffDays > 0 ? diffDays : 0;
@@ -400,20 +398,15 @@
                 const topic = studyData.topics.find(t => t.id === topicId);
                 if (topic && topic.driveLink) {
                     try {
-                        const link = document.createElement('a');
-                        link.href = topic.driveLink;
-                        link.setAttribute('download', ''); 
-                        link.setAttribute('target', '_blank');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    } catch (error) {
-                        console.error('Download failed:', error);
-                        // Fallback to opening in a new tab if download fails
+                        // Abrir o link em uma nova aba é a abordagem mais confiável para links do Google Drive
+                        // e outros serviços, permitindo que o navegador gerencie o download ou a visualização.
                         window.open(topic.driveLink, '_blank');
+                    } catch (error) {
+                        console.error('Falha ao abrir o link:', error);
+                        alert('Não foi possível abrir o link.');
                     }
                 } else {
-                    alert('Nenhum link associado a este tópico para download.');
+                    alert('Nenhum link associado a este tópico.');
                 }
             }
 
@@ -602,3 +595,4 @@
     </script>
 </body>
 </html>
+
