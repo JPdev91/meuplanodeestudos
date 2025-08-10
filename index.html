@@ -245,7 +245,8 @@
                     { id: 38, title: 'Português 1', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 39, title: 'Português 2', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 40, title: 'Português 3', category: 'Bônus', completed: false, driveLink: '', score: null },
-                    { id: 41, title: 'Redação 1', category: 'Bônus', completed: false, driveLink: '', score: null },
+                    // O link para 'Redação 1' foi atualizado aqui
+                    { id: 41, title: 'Redação 1', category: 'Bônus', completed: false, driveLink: 'https://jpdev91.github.io/redacao1-/', score: null },
                     { id: 42, title: 'Redação 2', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 43, title: 'Redação 3', category: 'Bônus', completed: false, driveLink: '', score: null },
                 ],
@@ -398,15 +399,22 @@
                 const topic = studyData.topics.find(t => t.id === topicId);
                 if (topic && topic.driveLink) {
                     try {
-                        const link = document.createElement('a');
-                        link.href = topic.driveLink;
-                        link.setAttribute('download', ''); 
-                        link.setAttribute('target', '_blank');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
+                        // For the specific 'Redação 1' topic, open the link directly in a new tab.
+                        if (topic.title === 'Redação 1') {
+                            window.open(topic.driveLink, '_blank');
+                        } else {
+                            // For other links, try to trigger a download
+                            const link = document.createElement('a');
+                            link.href = topic.driveLink;
+                            link.setAttribute('download', ''); 
+                            link.setAttribute('target', '_blank');
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
                     } catch (error) {
                         console.error('Download failed:', error);
+                        // Fallback to opening in a new tab if download fails
                         window.open(topic.driveLink, '_blank');
                     }
                 } else {
@@ -599,3 +607,4 @@
     </script>
 </body>
 </html>
+
