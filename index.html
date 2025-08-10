@@ -163,6 +163,7 @@
             const STORAGE_KEY = 'studyPlanData';
             const CALENDAR_STORAGE_KEY = 'calendarTasks';
             
+            // Popula os links dos tópicos a partir do objeto fileLinks
             const fileLinks = {
                 'Constituição Federal (CF/88)': 'https://drive.google.com/file/d/1mUlSOAB5F8BPtkzVlndu8nYJRm4u7z4V/view?usp=drive_link',
                 'Constituição Estadual (MG)': 'https://drive.google.com/file/d/1CccytIjwtQjtZCjc4ZFFpO5dhBUNciGn/view?usp=drive_link',
@@ -201,6 +202,8 @@
                 'Estágio e Práticas Curriculares': 'https://drive.google.com/open?id=14iD73my05Kz028uIH5HMTO48S2rcVxQC',
                 'Organização do Sistema Estadual': 'https://drive.google.com/file/d/171HiXZMxkZTfrgzzGXXoj-NRc7NryEh1/view?usp=drive_link',
                 'Atribuições do Especialista': 'https://drive.google.com/file/d/1H0U7wMy9glbJelnP1PgGyNW1T1uhdjky/view?usp=drive_link',
+                // Link para Redação 1 adicionado aqui para garantir que não seja sobrescrito.
+                'Redação 1': 'https://jpdev91.github.io/redacao1-/'
             };
 
             let studyData = {
@@ -245,15 +248,13 @@
                     { id: 38, title: 'Português 1', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 39, title: 'Português 2', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 40, title: 'Português 3', category: 'Bônus', completed: false, driveLink: '', score: null },
-                    // O link para 'Redação 1' foi atualizado aqui
-                    { id: 41, title: 'Redação 1', category: 'Bônus', completed: false, driveLink: 'https://jpdev91.github.io/redacao1-/', score: null },
+                    { id: 41, title: 'Redação 1', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 42, title: 'Redação 2', category: 'Bônus', completed: false, driveLink: '', score: null },
                     { id: 43, title: 'Redação 3', category: 'Bônus', completed: false, driveLink: '', score: null },
                 ],
                 endDate: new Date('2025-09-22T23:59:59').toISOString()
             };
             
-            // Popula os links dos tópicos a partir do objeto fileLinks
             studyData.topics.forEach(topic => {
                 if (fileLinks[topic.title]) {
                     topic.driveLink = fileLinks[topic.title];
@@ -399,19 +400,13 @@
                 const topic = studyData.topics.find(t => t.id === topicId);
                 if (topic && topic.driveLink) {
                     try {
-                        // For the specific 'Redação 1' topic, open the link directly in a new tab.
-                        if (topic.title === 'Redação 1') {
-                            window.open(topic.driveLink, '_blank');
-                        } else {
-                            // For other links, try to trigger a download
-                            const link = document.createElement('a');
-                            link.href = topic.driveLink;
-                            link.setAttribute('download', ''); 
-                            link.setAttribute('target', '_blank');
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        }
+                        const link = document.createElement('a');
+                        link.href = topic.driveLink;
+                        link.setAttribute('download', ''); 
+                        link.setAttribute('target', '_blank');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
                     } catch (error) {
                         console.error('Download failed:', error);
                         // Fallback to opening in a new tab if download fails
