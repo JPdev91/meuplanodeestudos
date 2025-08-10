@@ -253,13 +253,6 @@
                 endDate: new Date('2025-09-22T23:59:59').toISOString()
             };
             
-            // Popula os links dos tópicos a partir do objeto fileLinks
-            studyData.topics.forEach(topic => {
-                if (fileLinks[topic.title]) {
-                    topic.driveLink = fileLinks[topic.title];
-                }
-            });
-            
             let calendarTasks = {
                 '2025-08-24': [{ text: 'Prova PBH' }],
                 '2025-09-28': [{ text: 'Prova Educação MG' }],
@@ -297,8 +290,14 @@
                 const savedData = localStorage.getItem(STORAGE_KEY);
                 if (savedData) {
                     const parsedData = JSON.parse(savedData);
-                    parsedData.endDate = new Date(parsedData.endDate);
-                    studyData = parsedData;
+                    // Mantém o progresso do usuário, mas não os links antigos
+                    parsedData.topics.forEach((savedTopic, index) => {
+                        if (studyData.topics[index]) {
+                            studyData.topics[index].completed = savedTopic.completed;
+                            studyData.topics[index].score = savedTopic.score;
+                        }
+                    });
+                    studyData.endDate = new Date(parsedData.endDate);
                 }
             }
             
@@ -581,7 +580,14 @@
             });
             
             function initialize() {
-                loadData();
+                // Popula os links dos tópicos a partir do objeto fileLinks primeiro
+                studyData.topics.forEach(topic => {
+                    if (fileLinks[topic.title]) {
+                        topic.driveLink = fileLinks[topic.title];
+                    }
+                });
+
+                loadData(); // Agora, carrega o progresso do usuário sem sobrescrever os links
                 loadCalendarTasks();
                 calculateDaysLeft();
                 createChart();
@@ -596,3 +602,4 @@
     </script>
 </body>
 </html>
+
